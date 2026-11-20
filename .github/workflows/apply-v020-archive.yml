@@ -3,7 +3,7 @@ name: Apply JARVIS v0.2.0 source archive
 on:
   push:
     branches: [ jarvis-red-white-ui ]
-    paths: [ 'jarvis-v0.2.0-source.tar.xz' ]
+    paths: [ 'jarvis-v0.2.0-source.tar.xz.b64' ]
 
 permissions:
   contents: write
@@ -23,11 +23,12 @@ jobs:
         run: |
           set -euo pipefail
           tmp="$(mktemp -d)"
-          tar -xJf jarvis-v0.2.0-source.tar.xz -C "$tmp"
+          base64 -d jarvis-v0.2.0-source.tar.xz.b64 > "$tmp/source.tar.xz"
+          tar -xJf "$tmp/source.tar.xz" -C "$tmp"
           source_dir="$tmp/AGORA-jarvis-red-white-ui"
           test -f "$source_dir/app/src/main/AndroidManifest.xml"
           rsync -a --delete --exclude='.git/' "$source_dir/" ./
-          rm -f jarvis-v0.2.0-source.tar.xz
+          rm -f jarvis-v0.2.0-source.tar.xz.b64
           rm -rf "$tmp"
 
       - name: Setup JDK 17
