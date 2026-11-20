@@ -69,6 +69,39 @@ object GeminiApiClient {
         return prefs.getInt("requests", 0) to 20
     }
 
+    fun askImage(context: Context, prompt: String, imageBytes: ByteArray, mimeType: String): String {
+        val key = readKey(context)
+        if (key.isBlank()) return "API key లేదు. Gemini API Settings లో key add చేయండి."
+        val prefs = context.getSharedPreferences("jarvis_limits", Context.MODE_PRIVATE)
+        val (used, limit) = usage(context)
+        if (used >= limit) return "ఈ రోజు app request limit ($limit) పూర్తయింది."
+        var connection: HttpURLConnection? = null
+        return try {
+            val encoded = Base64.encodeToString(imageBytes, Base64.NO_WRAP)
+            val parts = JSONArray()
+                .put(JSONObject().put("text", prompt.take(4000)))
+                .put(JSONObject().put("inline_data", JSONObject().put("mime_type", mimeType).put("data", encoded)))
+            val body = JSONObject().put("contents", JSONArray().put(JSONObject().put("role", "user").put("parts", parts)))
+                .put("generationConfig", JSONObject().put("maxOutputTokens", 700))
+            connection = (URL("https://generativelanguage.googleapis.com/v1beta/models/$MODEL:generateContent").openConnection() as HttpURLConnection).apply {
+                requestMethod = "POST"; connectTimeout = 15000; readTimeout = 60000; doOutput = true
+                setRequestProperty("Content-Type", "application/json")
+                setRequestProperty("x-goog-api-key", key)
+            }
+            connection.outputStream.use { it.write(body.toString().toByteArray(Charsets.UTF_8)) }
+            val code = connection.responseCode
+            val stream = if (code in 200..299) connection.inputStream else connection.errorStream
+            val response = stream?.bufferedReader()?.use { it.readText() }.orEmpty()
+            if (code !in 200..299) return "Gemini API error ($code): " + (try { JSONObject(response).optJSONObject("error")?.optString("message") } catch (_: Exception) { null })
+            prefs.edit().putInt("requests", used + 1).apply()
+            val candidates = JSONObject(response).optJSONArray("candidates")
+            val text = candidates?.optJSONObject(0)?.optJSONObject("content")?.optJSONArray("parts")?.optJSONObject(0)?.optString("text").orEmpty()
+            text.ifBlank { "Image response రాలేదు." }
+        } catch (e: Exception) {
+            "Image analysis error: ${e.message ?: "Please retry"}"
+        } finally { connection?.disconnect() }
+    }
+
     fun ask(context: Context, prompt: String): String {
         val key = readKey(context)
         if (key.isBlank()) return "API key లేదు. Home లో API Settings తెరిచి Gemini key add చేయండి."
