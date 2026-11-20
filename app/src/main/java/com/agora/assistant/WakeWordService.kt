@@ -116,6 +116,12 @@ class WakeWordService : Service() {
             override fun onEvent(eventType: Int, params: Bundle?) {}
         })
 
+        val configuredLanguage = VoicePreferences.language(this)
+        commandLocale = when (configuredLanguage) {
+            VoicePreferences.LANG_ENGLISH -> "en-IN"
+            VoicePreferences.LANG_TELUGU -> "te-IN"
+            else -> "te-IN"
+        }
         val locale = if (waitingForCommand) commandLocale else "en-IN"
         val request = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
@@ -136,7 +142,7 @@ class WakeWordService : Service() {
             return
         }
         val normalized = text.lowercase(Locale.ROOT)
-        val keys = listOf("hey jarvis", "hey jarvis ai", "హే జార్విస్")
+        val keys = listOf("hey jarvis ai", "hey jarvis", "హే జార్విస్")
         val key = keys.firstOrNull { normalized.contains(it) } ?: return
         val command = text.substring(normalized.indexOf(key) + key.length).trim(' ', ',', '.', '!', '?')
         if (command.isNotBlank()) runCommand(command) else {
