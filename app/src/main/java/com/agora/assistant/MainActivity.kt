@@ -132,7 +132,7 @@ class MainActivity : Activity() {
         }
         body.addView(status, matchWrap().apply { bottomMargin = dp(10) })
 
-        startButton = actionButton("🎙  START HEY AGORA", red) { ensurePermissionsAndStart() }
+        startButton = actionButton("🎙  START HEY JARVIS", red) { ensurePermissionsAndStart() }
         body.addView(startButton, matchWrap().apply { bottomMargin = dp(9) })
         body.addView(actionButton("■  STOP LISTENING", Color.rgb(95, 95, 105)) {
             stopService(Intent(this, WakeWordService::class.java))
@@ -455,7 +455,7 @@ class MainActivity : Activity() {
         try {
             val i = Intent(this, WakeWordService::class.java).setAction(WakeWordService.ACTION_START)
             if (Build.VERSION.SDK_INT >= 26) startForegroundService(i) else startService(i)
-            if (::status.isInitialized) status.text = "LISTENING STARTED  •  Wake phrase: Hey Agora"
+            if (::status.isInitialized) status.text = "LISTENING STARTED  •  Wake phrase: Hey Jarvis"
             if (::startButton.isInitialized) startButton.isEnabled = false
         } catch (e: Exception) {
             if (::status.isInitialized) status.text = "Could not start voice service: ${e.message}"
