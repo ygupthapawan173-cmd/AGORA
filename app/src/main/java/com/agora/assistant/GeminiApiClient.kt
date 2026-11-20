@@ -62,14 +62,19 @@ object GeminiApiClient {
         return generator.generateKey()
     }
 
+    fun usage(context: Context): Pair<Int, Int> {
+        val prefs = context.getSharedPreferences("jarvis_limits", Context.MODE_PRIVATE)
+        val today = java.text.SimpleDateFormat("yyyyMMdd", java.util.Locale.US).format(java.util.Date())
+        if (prefs.getString("day", "") != today) prefs.edit().putString("day", today).putInt("requests", 0).apply()
+        return prefs.getInt("requests", 0) to 20
+    }
+
     fun ask(context: Context, prompt: String): String {
         val key = readKey(context)
         if (key.isBlank()) return "API key లేదు. Home లో API Settings తెరిచి Gemini key add చేయండి."
         val prefs = context.getSharedPreferences("jarvis_limits", Context.MODE_PRIVATE)
-        val today = java.text.SimpleDateFormat("yyyyMMdd", java.util.Locale.US).format(java.util.Date())
-        if (prefs.getString("day", "") != today) prefs.edit().putString("day", today).putInt("requests", 0).apply()
-        val used = prefs.getInt("requests", 0)
-        if (used >= 20) return "ఈ రోజు app request limit (20) పూర్తయింది. రేపు మళ్లీ ప్రయత్నించండి. ఇది app-side limit మాత్రమే; Google billing limit కాదు."
+        val (used, dailyLimit) = usage(context)
+        if (used >= dailyLimit) return "ఈ రోజు app request limit (20) పూర్తయింది. రేపు మళ్లీ ప్రయత్నించండి. ఇది app-side limit మాత్రమే; Google billing limit కాదు."
         var connection: HttpURLConnection? = null
         try {
             val url = URL("https://generativelanguage.googleapis.com/v1beta/models/$MODEL:generateContent")
