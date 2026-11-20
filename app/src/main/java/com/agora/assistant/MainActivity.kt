@@ -2,6 +2,10 @@ package com.agora.assistant
 
 import android.Manifest
 import android.app.Activity
+import android.animation.ObjectAnimator
+import android.animation.PropertyValuesHolder
+import android.animation.ValueAnimator
+import android.view.animation.DecelerateInterpolator
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
@@ -107,6 +111,7 @@ class MainActivity : Activity() {
         root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
         root.addView(bottomNav("Home"), matchWrap())
         setContentView(root)
+        animateScreen(root)
     }
 
     private fun showChat() {
@@ -150,8 +155,10 @@ class MainActivity : Activity() {
             }
         }
         root.addView(orb, LinearLayout.LayoutParams(dp(210), dp(210)).apply { gravity = Gravity.CENTER; topMargin = dp(48); bottomMargin = dp(28) })
+        pulseOrb(orb)
         root.addView(text("చెప్పండి... నేను వింటున్నాను", 18, white, true).apply { gravity = Gravity.CENTER }, matchWrap())
         root.addView(text("Telugu  •  English", 13, muted, false).apply { gravity = Gravity.CENTER; setPadding(0, dp(8), 0, dp(24)) }, matchWrap())
+        root.addView(voiceWaveform(), LinearLayout.LayoutParams(-1, dp(54)).apply { bottomMargin = dp(18) })
         root.addView(actionButton("🎙  START HEY AGORA", red) { ensurePermissionsAndStart() }, matchWrap())
         root.addView(actionButton("■  STOP", Color.DKGRAY) {
             stopService(Intent(this, WakeWordService::class.java))
@@ -168,6 +175,61 @@ class MainActivity : Activity() {
         root.addView(text(title, 24, white, true).apply { gravity = Gravity.CENTER; setPadding(0, dp(40), 0, dp(18)) }, matchWrap())
         root.addView(infoCard(title, detail, red), matchWrap())
         setContentView(root)
+    }
+
+
+    private fun animateScreen(view: View) {
+        if (view is ViewGroup) {
+            for (i in 0 until view.childCount) {
+                val child = view.getChildAt(i)
+                child.alpha = 0f
+                child.translationY = dp(12).toFloat()
+                child.animate().alpha(1f).translationY(0f).setStartDelay(i * 45L)
+                    .setDuration(320L).setInterpolator(DecelerateInterpolator()).start()
+            }
+        }
+    }
+
+    private fun pulseOrb(view: View) {
+        ObjectAnimator.ofPropertyValuesHolder(
+            view,
+            PropertyValuesHolder.ofFloat(View.SCALE_X, 1f, 1.055f, 1f),
+            PropertyValuesHolder.ofFloat(View.SCALE_Y, 1f, 1.055f, 1f),
+            PropertyValuesHolder.ofFloat(View.ALPHA, 0.88f, 1f, 0.88f)
+        ).apply {
+            duration = 1900L
+            repeatCount = ValueAnimator.INFINITE
+            interpolator = android.view.animation.AccelerateDecelerateInterpolator()
+            start()
+        }
+    }
+
+    private fun voiceWaveform(): View {
+        val wave = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+        }
+        val heights = intArrayOf(12, 22, 36, 18, 44, 25, 14, 34, 20, 40, 16, 28, 12)
+        heights.forEachIndexed { index, height ->
+            val bar = View(this).apply {
+                background = GradientDrawable().apply {
+                    setColor(if (index % 3 == 0) white else red)
+                    cornerRadius = dp(5).toFloat()
+                }
+            }
+            wave.addView(bar, LinearLayout.LayoutParams(dp(4), dp(height)).apply {
+                leftMargin = dp(3); rightMargin = dp(3)
+            })
+            ObjectAnimator.ofFloat(bar, View.SCALE_Y, 0.45f, 1.25f, 0.55f).apply {
+                duration = 420L + (index % 5) * 110L
+                repeatCount = ValueAnimator.INFINITE
+                repeatMode = ValueAnimator.REVERSE
+                startDelay = index * 55L
+                interpolator = android.view.animation.AccelerateDecelerateInterpolator()
+                start()
+            }
+        }
+        return wave
     }
 
     private fun bubble(message: String, user: Boolean): TextView = text(message, 15, white, false).apply {
