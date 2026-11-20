@@ -59,18 +59,35 @@ class MainActivity : Activity() {
         val body = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         scroll.addView(body)
 
-        body.addView(row(
-            text("J", 28, red, true),
-            text("JARVIS AI", 22, white, true),
-            text("●", 16, Color.rgb(70, 230, 130), true)
-        ).apply { gravity = Gravity.CENTER_VERTICAL; setPadding(dp(4), dp(12), dp(4), dp(18)) }, matchWrap())
+        val header = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(2), dp(8), dp(2), dp(18))
+        }
+        header.addView(text("J", 30, red, true), LinearLayout.LayoutParams(dp(42), dp(52)))
+        header.addView(LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            addView(text("JARVIS AI", 23, white, true), matchWrap())
+            addView(text("PERSONAL AI ASSISTANT", 9, muted, true).apply { letterSpacing = .12f }, matchWrap())
+        }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        header.addView(actionButton("⚙", Color.rgb(70, 15, 24)) { showApiSettings() }.apply {
+            textSize = 19f; minWidth = dp(48)
+        }, LinearLayout.LayoutParams(dp(52), dp(48)))
+        body.addView(header, matchWrap())
 
-        body.addView(actionButton("⚙  GEMINI API SETTINGS", Color.rgb(85, 15, 25)) { showApiSettings() }.apply {
-            textSize = 12f
-        }, matchWrap().apply { bottomMargin = dp(12) })
+        val apiReady = GeminiApiClient.hasKey(this)
+        body.addView(LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(12), dp(8), dp(12), dp(8))
+            background = panel(if (apiReady) Color.rgb(45, 190, 110) else red)
+            addView(text(if (apiReady) "●  GEMINI CONNECTED" else "●  API KEY REQUIRED", 10, if (apiReady) Color.rgb(90, 235, 150) else Color.rgb(255, 130, 140), true), LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+            addView(text("SETUP  ›", 10, white, true).apply { setOnClickListener { showApiSettings() } }, matchWrap())
+            setOnClickListener { showApiSettings() }
+        }, matchWrap().apply { bottomMargin = dp(16) })
 
-        body.addView(text("YOUR PERSONAL AI ASSISTANT", 10, muted, true).apply {
-            letterSpacing = .18f; gravity = Gravity.CENTER; setPadding(0, 0, 0, dp(18))
+        body.addView(text("YOUR AI. YOUR WORLD.", 10, muted, true).apply {
+            letterSpacing = .2f; gravity = Gravity.CENTER; setPadding(0, 0, 0, dp(14))
         }, matchWrap())
 
         val welcome = LinearLayout(this).apply {
@@ -88,7 +105,7 @@ class MainActivity : Activity() {
                 setStroke(dp(3), Color.rgb(255, 120, 130))
             }
         }
-        welcome.addView(core, LinearLayout.LayoutParams(dp(124), dp(124)).apply { gravity = Gravity.CENTER })
+        welcome.addView(core, LinearLayout.LayoutParams(dp(138), dp(138)).apply { gravity = Gravity.CENTER })
         pulseOrb(core)
         welcome.addView(text("JARVIS CORE  •  ONLINE", 11, Color.rgb(255, 120, 130), true).apply {
             gravity = Gravity.CENTER; setPadding(0, dp(10), 0, dp(2))
@@ -313,9 +330,21 @@ class MainActivity : Activity() {
     }
 
     private fun feature(icon: String, label: String, click: () -> Unit): View {
-        val b = actionButton("$icon\n$label", Color.rgb(95, 95, 105), click)
-        b.textSize = 14f
-        return b
+        val card = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            setPadding(dp(8), dp(12), dp(8), dp(12))
+            background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.rgb(55, 15, 23), Color.rgb(22, 20, 25))).apply {
+                cornerRadius = dp(20).toFloat()
+                setStroke(dp(1), Color.rgb(115, 55, 66))
+            }
+            isClickable = true
+            isFocusable = true
+            setOnClickListener { click() }
+        }
+        card.addView(text(icon, 25, Color.rgb(255, 105, 120), true).apply { gravity = Gravity.CENTER }, matchWrap())
+        card.addView(text(label, 13, white, true).apply { gravity = Gravity.CENTER; setPadding(0, dp(7), 0, 0) }, matchWrap())
+        return card
     }
 
     private fun bottomNav(selected: String): View = row(
