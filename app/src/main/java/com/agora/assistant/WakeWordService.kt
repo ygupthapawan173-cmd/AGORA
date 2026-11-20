@@ -156,7 +156,6 @@ class WakeWordService : Service() {
         val result = LocalCommandRouter(this, tts).run(command)
         if (result.startsWith("__LOCAL_LLM__:")) {
             val prompt = result.substringAfter(":")
-            speak("One moment")
             Thread {
                 val answer = if (GeminiApiClient.hasKey(this)) {
                     val history = getSharedPreferences("jarvis_memory", MODE_PRIVATE).getString("history", "").orEmpty()
