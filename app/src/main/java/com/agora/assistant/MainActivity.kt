@@ -114,22 +114,11 @@ class MainActivity : Activity() {
         welcome.addView(text("How can I help you today?", 14, muted, false).apply { gravity = Gravity.CENTER }, matchWrap())
         body.addView(welcome, matchWrap().apply { bottomMargin = dp(16) })
 
-        body.addView(text("QUICK ACCESS", 12, red, true).apply { letterSpacing = .12f; setPadding(dp(2), dp(8), 0, dp(10)) }, matchWrap())
-        body.addView(row(
-            feature("▤", "AI Chat") { showChat() },
-            feature("🎙", "Voice") { showVoice() }
-        ), matchWrap().apply { bottomMargin = dp(10) })
-        body.addView(row(
-            feature("▧", "Vision & OCR") { showInfo("Vision & OCR", "Image and screenshot analysis will be added in the next build.") },
-            feature("</>", "Code") { showInfo("Code Assistant", "Code help screen is coming next.") }
-        ), matchWrap().apply { bottomMargin = dp(10) })
-        body.addView(row(
-            feature("⌕", "Web Search") { openWebSearch() },
-            feature("⚡", "Automation") { showInfo("Automation", "Actions will ask for your confirmation before running.") }
-        ), matchWrap().apply { bottomMargin = dp(18) })
-
-        body.addView(text(if (GeminiApiClient.hasKey(this)) "GEMINI AI • API KEY SAVED" else "GEMINI AI • API KEY NOT SET", 12, red, true)
-            .apply { setPadding(dp(2), dp(4), 0, dp(8)) }, matchWrap())
+        body.addView(metricStrip(), matchWrap().apply { bottomMargin = dp(12) })
+        body.addView(voiceWaveform(), LinearLayout.LayoutParams(-1, dp(48)).apply { bottomMargin = dp(14) })
+        body.addView(row(feature("▤", "AI Chat") { showChat() }, feature("🎙", "Voice") { showVoice() }, feature("▧", "Vision") { showInfo("Vision & OCR", "Image understanding is being added.") }, feature("＋", "Create") { showInfo("Create", "Creative tools are coming next.") }), matchWrap().apply { bottomMargin = dp(8) })
+        body.addView(row(feature("▣", "Files") { showInfo("Files", "File tools are coming next.") }, feature("</>", "Code") { showInfo("Code Assistant", "Coding tools are coming next.") }, feature("◎", "Web") { openWebSearch() }, feature("⚡", "Tools") { showInfo("Tools", "Automation tools will ask before acting.") }), matchWrap().apply { bottomMargin = dp(16) })
+        body.addView(text("QUICK ACTIONS", 12, red, true).apply { letterSpacing = .12f; setPadding(dp(2), dp(4), 0, dp(8)) }, matchWrap())
         body.addView(text("JARVIS SYSTEM STATUS", 12, red, true).apply { setPadding(dp(2), dp(4), 0, dp(8)) }, matchWrap())
         status = text("STANDBY  •  Voice assistant is off", 13, white, false).apply {
             gravity = Gravity.CENTER; setPadding(dp(12), dp(15), dp(12), dp(15)); background = panel()
@@ -154,7 +143,7 @@ class MainActivity : Activity() {
 
     private fun showChat() {
         root = baseScreen()
-        root.addView(row(actionButton("‹", red) { showHome() }, text("JARVIS AI  •  CHAT", 18, white, true)), matchWrap())
+        root.addView(row(actionButton("‹", red) { showHome() }, text("JARVIS AI", 19, white, true), actionButton("⚙", Color.rgb(70, 15, 24)) { showApiSettings() }), matchWrap())
         val scroll = ScrollView(this)
         val messages = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(0, dp(18), 0, dp(12)) }
         messages.addView(bubble("నమస్కారం! నేను JARVIS AI. Gemini ద్వారా తెలుగులోనూ English లోనూ మాట్లాడవచ్చు.", false), matchWrap().apply { bottomMargin = dp(12) })
@@ -192,6 +181,7 @@ class MainActivity : Activity() {
             }
         }, LinearLayout.LayoutParams(dp(58), dp(56)))
         root.addView(inputRow, matchWrap().apply { topMargin = dp(10) })
+        root.addView(bottomNav("Chat"), matchWrap())
         root.addView(text("Powered by Gemini • Telugu + English", 10, muted, false).apply {
             gravity = Gravity.CENTER; setPadding(0, dp(7), 0, 0)
         }, matchWrap())
@@ -233,28 +223,28 @@ class MainActivity : Activity() {
 
     private fun showVoice() {
         root = baseScreen()
-        root.addView(actionButton("‹  BACK", red) { showHome() }, matchWrap())
-        root.addView(text("HEY AGORA", 22, white, true).apply { gravity = Gravity.CENTER; setPadding(0, dp(28), 0, dp(8)) }, matchWrap())
-        root.addView(text("Voice Assistant", 13, muted, false).apply { gravity = Gravity.CENTER }, matchWrap())
+        root.addView(row(actionButton("‹", red) { showHome() }, text("JARVIS AI", 19, white, true), actionButton("⚙", Color.rgb(70, 15, 24)) { showApiSettings() }), matchWrap())
+        root.addView(text("VOICE ASSISTANT", 10, muted, true).apply { gravity = Gravity.CENTER; letterSpacing = .18f; setPadding(0, dp(20), 0, dp(8)) }, matchWrap())
         val orb = TextView(this).apply {
-            text = "A"; textSize = 66f; typeface = Typeface.DEFAULT_BOLD
+            text = "◈"; textSize = 76f; typeface = Typeface.DEFAULT_BOLD
             setTextColor(white); gravity = Gravity.CENTER
-            background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(red, Color.DKGRAY, black)).apply {
-                shape = GradientDrawable.OVAL; setStroke(dp(3), white)
+            background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(red, Color.rgb(75, 8, 20), black)).apply {
+                shape = GradientDrawable.OVAL; setStroke(dp(3), Color.rgb(255, 120, 130))
             }
         }
-        root.addView(orb, LinearLayout.LayoutParams(dp(210), dp(210)).apply { gravity = Gravity.CENTER; topMargin = dp(48); bottomMargin = dp(28) })
+        root.addView(orb, LinearLayout.LayoutParams(dp(230), dp(230)).apply { gravity = Gravity.CENTER; topMargin = dp(28); bottomMargin = dp(18) })
         pulseOrb(orb)
-        root.addView(text("చెప్పండి... నేను వింటున్నాను", 18, white, true).apply { gravity = Gravity.CENTER }, matchWrap())
-        root.addView(text("Telugu  •  English", 13, muted, false).apply { gravity = Gravity.CENTER; setPadding(0, dp(8), 0, dp(24)) }, matchWrap())
-        root.addView(voiceWaveform(), LinearLayout.LayoutParams(-1, dp(54)).apply { bottomMargin = dp(18) })
-        root.addView(actionButton("🎙  START HEY AGORA", red) { ensurePermissionsAndStart() }, matchWrap())
+        root.addView(text("JARVIS ONLINE", 17, Color.rgb(255, 105, 120), true).apply { gravity = Gravity.CENTER }, matchWrap())
+        root.addView(text("చెప్పండి... నేను వింటున్నాను", 15, white, true).apply { gravity = Gravity.CENTER; setPadding(0, dp(8), 0, dp(8)) }, matchWrap())
+        root.addView(voiceWaveform(), LinearLayout.LayoutParams(-1, dp(64)).apply { bottomMargin = dp(20) })
+        root.addView(actionButton("●  START LISTENING", red) { ensurePermissionsAndStart() }, matchWrap())
         root.addView(actionButton("■  STOP", Color.DKGRAY) {
             stopService(Intent(this, WakeWordService::class.java))
             if (::startButton.isInitialized) startButton.isEnabled = true
             Toast.makeText(this, "Voice listening stopped", Toast.LENGTH_SHORT).show()
         }, matchWrap().apply { topMargin = dp(10) })
         root.addView(View(this), LinearLayout.LayoutParams(-1, 0, 1f))
+        root.addView(bottomNav("Voice"), matchWrap())
         setContentView(root)
         animateScreen(root)
     }
@@ -329,6 +319,26 @@ class MainActivity : Activity() {
         gravity = if (user) Gravity.END else Gravity.START
     }
 
+    private fun metricStrip(): View {
+        val strip = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER }
+        strip.addView(metricCard("✧", "AI ENGINE", "Gemini", Color.rgb(100, 235, 170)), LinearLayout.LayoutParams(0, dp(76), 1f))
+        strip.addView(metricCard("♬", "VOICE", "Ready", Color.rgb(100, 235, 170)), LinearLayout.LayoutParams(0, dp(76), 1f).apply { leftMargin = dp(5) })
+        strip.addView(metricCard("▤", "API USAGE", "Tracked", Color.rgb(255, 125, 135)), LinearLayout.LayoutParams(0, dp(76), 1f).apply { leftMargin = dp(5) })
+        strip.addView(metricCard("⌁", "SYSTEM", "Healthy", Color.rgb(100, 235, 170)), LinearLayout.LayoutParams(0, dp(76), 1f).apply { leftMargin = dp(5) })
+        return strip
+    }
+
+    private fun metricCard(icon: String, title: String, value: String, valueColor: Int): View = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
+        setPadding(dp(3), dp(7), dp(3), dp(7))
+        background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Color.rgb(40, 10, 16), Color.rgb(13, 13, 17))).apply {
+            cornerRadius = dp(12).toFloat(); setStroke(dp(1), Color.rgb(105, 45, 55))
+        }
+        addView(text(icon, 16, red, true), matchWrap())
+        addView(text(title, 7, muted, true).apply { gravity = Gravity.CENTER; letterSpacing = .03f }, matchWrap())
+        addView(text(value, 10, valueColor, true).apply { gravity = Gravity.CENTER }, matchWrap())
+    }
+
     private fun feature(icon: String, label: String, click: () -> Unit): View {
         val card = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -347,18 +357,24 @@ class MainActivity : Activity() {
         return card
     }
 
-    private fun bottomNav(selected: String): View = row(
-        navItem("⌂", "Home", selected == "Home") { showHome() },
-        navItem("▤", "Chat", selected == "Chat") { showChat() },
-        navItem("🎙", "Voice", selected == "Voice") { showVoice() }
-    ).apply { setPadding(0, dp(8), 0, dp(4)); background = panel() }
+    private fun bottomNav(selected: String): View {
+        val bar = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER
+            setPadding(dp(4), dp(5), dp(4), dp(5)); background = panel()
+        }
+        bar.addView(navItem("⌂", "Home", selected == "Home") { showHome() }, LinearLayout.LayoutParams(0, dp(58), 1f))
+        bar.addView(navItem("▤", "Chat", selected == "Chat") { showChat() }, LinearLayout.LayoutParams(0, dp(58), 1f))
+        bar.addView(navItem("◈", "Core", selected == "Core") { showVoice() }, LinearLayout.LayoutParams(0, dp(58), 1f))
+        bar.addView(navItem("⚡", "Tools", selected == "Tools") { showInfo("Tools", "Tools and automation are being added.") }, LinearLayout.LayoutParams(0, dp(58), 1f))
+        bar.addView(navItem("◉", "Profile", selected == "Profile") { showApiSettings() }, LinearLayout.LayoutParams(0, dp(58), 1f))
+        return bar
+    }
 
     private fun navItem(icon: String, label: String, active: Boolean, click: () -> Unit): View =
         TextView(this).apply {
-            text = "$icon\n$label"; textSize = 12f; gravity = Gravity.CENTER
-            setTextColor(if (active) red else white); setPadding(dp(10), dp(8), dp(10), dp(8))
+            text = "$icon\\n$label"; textSize = 10f; gravity = Gravity.CENTER
+            setTextColor(if (active) red else white); setPadding(dp(2), dp(6), dp(2), dp(6))
             setOnClickListener { click() }
-            layoutParams = LinearLayout.LayoutParams(0, dp(58), 1f)
         }
 
     private fun ensurePermissionsAndStart() {
