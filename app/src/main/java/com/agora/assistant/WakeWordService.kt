@@ -54,8 +54,8 @@ class WakeWordService : Service() {
         createChannel()
         val notification = Notification.Builder(this, CHANNEL)
             .setSmallIcon(android.R.drawable.ic_btn_speak_now)
-            .setContentTitle("AGORA is active")
-            .setContentText("Wake phrase enabled: Hey Agora")
+            .setContentTitle("JARVIS AI is active")
+            .setContentText("Wake phrase enabled: Hey Jarvis")
             .setOngoing(true)
             .build()
         if (Build.VERSION.SDK_INT >= 29) startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE)
@@ -118,7 +118,7 @@ class WakeWordService : Service() {
             return
         }
         val normalized = text.lowercase(Locale.ROOT)
-        val keys = listOf("hey agora", "hey agorah", "హే అగోరా")
+        val keys = listOf("hey jarvis", "hey jarvis ai", "హే జార్విస్")
         val key = keys.firstOrNull { normalized.contains(it) } ?: return
         val command = text.substring(normalized.indexOf(key) + key.length).trim(' ', ',', '.', '!', '?')
         if (command.isNotBlank()) runCommand(command) else {
@@ -148,7 +148,7 @@ class WakeWordService : Service() {
     private fun speak(text: String) {
         if (text.isBlank()) return
         tts?.language = Locale.forLanguageTag(if (waitingForCommand) "te-IN" else "te-IN")
-        tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "agora-${System.currentTimeMillis()}")
+        tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "jarvis-${System.currentTimeMillis()}")
     }
 
     private fun createChannel() {
