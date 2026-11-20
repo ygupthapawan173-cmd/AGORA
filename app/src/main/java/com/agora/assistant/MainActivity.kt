@@ -493,7 +493,7 @@ class MainActivity : Activity() {
     private fun row(vararg views: View) = LinearLayout(this).apply {
         orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
         views.forEachIndexed { index, view ->
-            addView(view, LinearLayout.LayoutParams(0, dp(76), 1f).apply {
+            addView(view, LinearLayout.LayoutParams(0, dp(96), 1f).apply {
                 if (index > 0) leftMargin = dp(8)
             })
         }
