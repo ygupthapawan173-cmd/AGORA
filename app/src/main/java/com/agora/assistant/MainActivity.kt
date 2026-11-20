@@ -116,9 +116,10 @@ class MainActivity : Activity() {
 
         body.addView(metricStrip(), matchWrap().apply { bottomMargin = dp(12) })
         body.addView(voiceWaveform(), LinearLayout.LayoutParams(-1, dp(48)).apply { bottomMargin = dp(14) })
-        body.addView(row(feature("▤", "AI Chat") { showChat() }, feature("🎙", "Voice") { showVoice() }, feature("▧", "Vision") { showInfo("Vision & OCR", "Image understanding is being added.") }, feature("＋", "Create") { showInfo("Create", "Creative tools are coming next.") }), matchWrap().apply { bottomMargin = dp(8) })
-        body.addView(row(feature("▣", "Files") { showInfo("Files", "File tools are coming next.") }, feature("</>", "Code") { showInfo("Code Assistant", "Coding tools are coming next.") }, feature("◎", "Web") { openWebSearch() }, feature("⚡", "Tools") { showInfo("Tools", "Automation tools will ask before acting.") }), matchWrap().apply { bottomMargin = dp(16) })
+        body.addView(row(feature("▤", "AI Chat") { showChat() }, feature("🎙", "Voice") { showVoice() }, feature("▧", "Vision") { pickVisionImage() }, feature("＋", "Create") { showCodeAssistant() }), matchWrap().apply { bottomMargin = dp(8) })
+        body.addView(row(feature("▣", "Files") { pickDocument() }, feature("</>", "Code") { showCodeAssistant() }, feature("◎", "Web") { openWebSearch() }, feature("⚡", "Tools") { showInfo("Tools", "Automation tools will ask before acting.") }), matchWrap().apply { bottomMargin = dp(16) })
         body.addView(text("QUICK ACTIONS", 12, red, true).apply { letterSpacing = .12f; setPadding(dp(2), dp(4), 0, dp(8)) }, matchWrap())
+        body.addView(actionButton("▤  CONTROL CENTER  •  API / MEMORY / LIMITS", Color.rgb(75, 12, 22)) { showControlCenter() }, matchWrap().apply { bottomMargin = dp(12) })
         body.addView(text("JARVIS SYSTEM STATUS", 12, red, true).apply { setPadding(dp(2), dp(4), 0, dp(8)) }, matchWrap())
         status = text("STANDBY  •  Voice assistant is off", 13, white, false).apply {
             gravity = Gravity.CENTER; setPadding(dp(12), dp(15), dp(12), dp(15)); background = panel()
@@ -365,8 +366,8 @@ class MainActivity : Activity() {
         bar.addView(navItem("⌂", "Home", selected == "Home") { showHome() }, LinearLayout.LayoutParams(0, dp(58), 1f))
         bar.addView(navItem("▤", "Chat", selected == "Chat") { showChat() }, LinearLayout.LayoutParams(0, dp(58), 1f))
         bar.addView(navItem("◈", "Core", selected == "Core") { showVoice() }, LinearLayout.LayoutParams(0, dp(58), 1f))
-        bar.addView(navItem("⚡", "Tools", selected == "Tools") { showInfo("Tools", "Tools and automation are being added.") }, LinearLayout.LayoutParams(0, dp(58), 1f))
-        bar.addView(navItem("◉", "Profile", selected == "Profile") { showApiSettings() }, LinearLayout.LayoutParams(0, dp(58), 1f))
+        bar.addView(navItem("⚡", "Tools", selected == "Tools") { showTools() }, LinearLayout.LayoutParams(0, dp(58), 1f))
+        bar.addView(navItem("◉", "Profile", selected == "Profile") { showControlCenter() }, LinearLayout.LayoutParams(0, dp(58), 1f))
         return bar
     }
 
