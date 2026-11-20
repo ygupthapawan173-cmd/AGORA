@@ -123,9 +123,8 @@ class MainActivity : Activity() {
         body.addView(metricStrip(), matchWrap().apply { bottomMargin = dp(12) })
         body.addView(voiceWaveform(), LinearLayout.LayoutParams(-1, dp(48)).apply { bottomMargin = dp(14) })
         body.addView(row(feature("▤", "AI Chat") { showChat() }, feature("🎙", "Voice") { showVoice() }, feature("▧", "Vision") { pickVisionImage() }, feature("＋", "Create") { showCodeAssistant() }), matchWrap().apply { bottomMargin = dp(8) })
-        body.addView(row(feature("▣", "Files") { pickDocument() }, feature("</>", "Code") { showCodeAssistant() }, feature("◎", "Web") { openWebSearch() }, feature("⚡", "Tools") { showInfo("Tools", "Automation tools will ask before acting.") }), matchWrap().apply { bottomMargin = dp(16) })
+        body.addView(row(feature("▣", "Files") { pickDocument() }, feature("</>", "Code") { showCodeAssistant() }, feature("◎", "Web") { openWebSearch() }, feature("⚡", "Tools") { showTools() }), matchWrap().apply { bottomMargin = dp(16) })
         body.addView(text("QUICK ACTIONS", 12, red, true).apply { letterSpacing = .12f; setPadding(dp(2), dp(4), 0, dp(8)) }, matchWrap())
-        body.addView(actionButton("▤  CONTROL CENTER  •  API / MEMORY / LIMITS", Color.rgb(75, 12, 22)) { showControlCenter() }, matchWrap().apply { bottomMargin = dp(12) })
         body.addView(actionButton("▤  CONTROL CENTER  •  API / MEMORY / LIMITS", Color.rgb(75, 12, 22)) { showControlCenter() }, matchWrap().apply { bottomMargin = dp(12) })
         body.addView(text("JARVIS SYSTEM STATUS", 12, red, true).apply { setPadding(dp(2), dp(4), 0, dp(8)) }, matchWrap())
         status = text("STANDBY  •  Voice assistant is off", 13, white, false).apply {
@@ -304,7 +303,7 @@ class MainActivity : Activity() {
             Toast.makeText(this, "Voice listening stopped", Toast.LENGTH_SHORT).show()
         }, matchWrap().apply { topMargin = dp(10) })
         root.addView(View(this), LinearLayout.LayoutParams(-1, 0, 1f))
-        root.addView(bottomNav("Voice"), matchWrap())
+        root.addView(bottomNav("Core"), matchWrap())
         setContentView(root)
         animateScreen(root)
     }
@@ -432,7 +431,7 @@ class MainActivity : Activity() {
 
     private fun navItem(icon: String, label: String, active: Boolean, click: () -> Unit): View =
         TextView(this).apply {
-            text = "$icon\\n$label"; textSize = 10f; gravity = Gravity.CENTER
+            text = "$icon\n$label"; textSize = 10f; gravity = Gravity.CENTER
             setTextColor(if (active) red else white); setPadding(dp(2), dp(6), dp(2), dp(6))
             setOnClickListener { click() }
         }
