@@ -24,7 +24,7 @@ object LocalModelClient {
                 .put("temperature", 0.4)
                 .put("max_tokens", 220)
                 .put("messages", JSONArray()
-                    .put(JSONObject().put("role", "system").put("content", "You are AGORA, a concise Telugu-first Android voice assistant. Reply briefly and never claim you performed phone actions unless the app confirms them."))
+                    .put(JSONObject().put("role", "system").put("content", "You are JARVIS AI, a concise Telugu and English Android assistant. Reply briefly and never claim you performed phone actions unless the app confirms them."))
                     .put(JSONObject().put("role", "user").put("content", prompt)))
             connection.outputStream.use { it.write(body.toString().toByteArray(Charsets.UTF_8)) }
             if (connection.responseCode !in 200..299) return null

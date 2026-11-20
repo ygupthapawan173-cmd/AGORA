@@ -120,7 +120,7 @@ class WakeWordService : Service() {
         commandLocale = when (configuredLanguage) {
             VoicePreferences.LANG_ENGLISH -> "en-IN"
             VoicePreferences.LANG_TELUGU -> "te-IN"
-            else -> "te-IN"
+            else -> if (Locale.getDefault().language.equals("te", true)) "te-IN" else "en-IN"
         }
         val locale = if (waitingForCommand) commandLocale else "en-IN"
         val request = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
@@ -157,16 +157,11 @@ class WakeWordService : Service() {
         if (result.startsWith("__LOCAL_LLM__:")) {
             val prompt = result.substringAfter(":")
             Thread {
-                val answer = if (GeminiApiClient.hasKey(this)) {
-                    val history = getSharedPreferences("jarvis_memory", MODE_PRIVATE).getString("history", "").orEmpty()
-                    val contextualPrompt = if (history.isBlank()) prompt else "Recent conversation memory:\\n$history\\nUser: $prompt"
-                    GeminiApiClient.ask(this, contextualPrompt).also { reply ->
-                        getSharedPreferences("jarvis_memory", MODE_PRIVATE).edit()
-                            .putString("history", (history + "\\nUser: " + prompt.take(600) + "\\nJARVIS: " + reply.take(900)).takeLast(7000)).apply()
-                    }
-                } else {
-                    LocalModelClient.ask(prompt) ?: "Gemini API key is not configured. Add it in JARVIS settings to use cloud voice AI."
-                }
+                val history = getSharedPreferences("jarvis_memory", MODE_PRIVATE).getString("history", "").orEmpty()
+                val contextualPrompt = if (history.isBlank()) prompt else "Recent conversation context:\n$history\nUser: $prompt"
+                val answer = AiRouter.ask(this, contextualPrompt)
+                getSharedPreferences("jarvis_memory", MODE_PRIVATE).edit()
+                    .putString("history", (history + "\nUser: " + prompt.take(600) + "\nJARVIS: " + answer.take(900)).takeLast(7000)).apply()
                 main.post { if (active) speak(answer) }
             }.start()
         } else speak(result)

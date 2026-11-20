@@ -1,9 +1,9 @@
 <resources>
     <style name="AgoraTheme" parent="android:style/Theme.Material.NoActionBar">
         <item name="android:fontFamily">sans</item>
-        <item name="android:colorAccent">#20DFFF</item>
-        <item name="android:navigationBarColor">#050A12</item>
-        <item name="android:statusBarColor">#050A12</item>
+        <item name="android:colorAccent">#FF2330</item>
+        <item name="android:navigationBarColor">#050508</item>
+        <item name="android:statusBarColor">#050508</item>
         <item name="android:windowLightStatusBar">false</item>
     </style>
 </resources>

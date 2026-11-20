@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="accessibility_service_description">JARVIS can read screen text only in apps you explicitly select. Screen content stays on this device; cloud sharing is disabled. Actions require your approval.</string>
+</resources>
