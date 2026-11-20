@@ -53,7 +53,7 @@ class MainActivity : Activity() {
         window.decorView.systemUiVisibility = 0
         replyTts = TextToSpeech(this) { result ->
             replyTtsReady = result == TextToSpeech.SUCCESS
-            if (replyTtsReady) replyTts?.language = Locale.forLanguageTag("en-IN")
+            if (replyTtsReady) VoicePreferences.apply(replyTts, this)
         }
         showHome()
     }
@@ -211,9 +211,7 @@ class MainActivity : Activity() {
     private fun speakAssistantReply(message: String) {
         if (message.isBlank() || !replyTtsReady) return
         val telugu = message.any { it in '\u0C00'..'\u0C7F' }
-        val locale = Locale.forLanguageTag(if (telugu) "te-IN" else "en-IN")
-        val availability = replyTts?.isLanguageAvailable(locale) ?: TextToSpeech.LANG_NOT_SUPPORTED
-        replyTts?.language = if (availability >= TextToSpeech.LANG_AVAILABLE) locale else Locale.forLanguageTag("en-IN")
+        VoicePreferences.apply(replyTts, this, message)
         replyTts?.speak(message.take(3500), TextToSpeech.QUEUE_FLUSH, null, "jarvis-chat-${System.currentTimeMillis()}")
     }
 
@@ -239,8 +237,8 @@ class MainActivity : Activity() {
         AlertDialog.Builder(this).setTitle("JARVIS Control Center").setMessage(msg).setPositiveButton("API SETTINGS") { _, _ -> showApiSettings() }.setNeutralButton("CLEAR MEMORY") { _, _ -> getSharedPreferences("jarvis_memory", MODE_PRIVATE).edit().clear().apply() }.setNegativeButton("CLOSE", null).show()
     }
     private fun showTools() {
-        val items = arrayOf("Web Search", "Code Assistant", "Offline Commands", "Phone Automation", "Vision & OCR", "Open Text File", "Control Center")
-        AlertDialog.Builder(this).setTitle("JARVIS Tools").setItems(items) { _, i -> when (i) { 0 -> askSearch(); 1 -> codeAssistant(); 2 -> offlineCommand(); 3 -> phoneAction(); 4 -> pickVisionImage(); 5 -> pickDocument(); 6 -> showControlCenter() } }.show()
+        val items = arrayOf("Web Search", "Code Assistant", "Offline Commands", "Phone Automation", "Vision & OCR", "Open Text File", "Voice & Language", "Control Center")
+        AlertDialog.Builder(this).setTitle("JARVIS Tools").setItems(items) { _, i -> when (i) { 0 -> askSearch(); 1 -> codeAssistant(); 2 -> offlineCommand(); 3 -> phoneAction(); 4 -> pickVisionImage(); 5 -> pickDocument(); 6 -> showVoiceSettings(); 7 -> showControlCenter() } }.show()
     }
     private fun askSearch() {
         val e = EditText(this).apply { hint = "Search web"; setTextColor(white) }
@@ -307,6 +305,36 @@ class MainActivity : Activity() {
             }
             .setNegativeButton("CANCEL", null)
             .show()
+    }
+
+    private fun showVoiceSettings() {
+        val genders = arrayOf("Male voice", "Female voice")
+        val selectedGender = if (VoicePreferences.gender(this) == VoicePreferences.GENDER_FEMALE) 1 else 0
+        AlertDialog.Builder(this).setTitle("JARVIS Voice")
+            .setSingleChoiceItems(genders, selectedGender) { dialog, which ->
+                val gender = if (which == 1) VoicePreferences.GENDER_FEMALE else VoicePreferences.GENDER_MALE
+                VoicePreferences.save(this, gender, VoicePreferences.language(this))
+                Toast.makeText(this, genders[which] + " selected (if installed on this device)", Toast.LENGTH_SHORT).show()
+                dialog.dismiss()
+                showVoiceLanguageSettings()
+            }.setNegativeButton("CANCEL", null).show()
+    }
+
+    private fun showVoiceLanguageSettings() {
+        val languages = arrayOf("Auto detect", "Telugu", "English (India)")
+        val values = arrayOf(VoicePreferences.LANG_AUTO, VoicePreferences.LANG_TELUGU, VoicePreferences.LANG_ENGLISH)
+        val selected = values.indexOf(VoicePreferences.language(this)).coerceAtLeast(0)
+        AlertDialog.Builder(this).setTitle("Speech language")
+            .setSingleChoiceItems(languages, selected) { dialog, which ->
+                VoicePreferences.save(this, VoicePreferences.gender(this), values[which])
+                val sample = if (which == 1) "నమస్కారం, నేను జార్విస్." else "Hello, I am JARVIS."
+                if (replyTtsReady) {
+                    VoicePreferences.apply(replyTts, this, sample)
+                    replyTts?.speak(sample, TextToSpeech.QUEUE_FLUSH, null, "jarvis-voice-test")
+                }
+                Toast.makeText(this, languages[which] + " selected", Toast.LENGTH_SHORT).show()
+                dialog.dismiss()
+            }.setNegativeButton("CLOSE", null).show()
     }
 
     private fun showVoice() {
