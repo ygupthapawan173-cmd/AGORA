@@ -2,6 +2,7 @@ package com.agora.assistant
 
 import android.Manifest
 import android.app.Activity
+import android.app.AlertDialog
 import android.animation.ObjectAnimator
 import android.animation.PropertyValuesHolder
 import android.animation.ValueAnimator
@@ -19,6 +20,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
+import android.text.InputType
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -58,10 +60,14 @@ class MainActivity : Activity() {
         scroll.addView(body)
 
         body.addView(row(
-            text("J", 30, red, true),
-            text("JARVIS AI", 25, white, true),
+            text("J", 28, red, true),
+            text("JARVIS AI", 22, white, true),
             text("●", 16, Color.rgb(70, 230, 130), true)
         ).apply { gravity = Gravity.CENTER_VERTICAL; setPadding(dp(4), dp(12), dp(4), dp(18)) }, matchWrap())
+
+        body.addView(actionButton("⚙  GEMINI API SETTINGS", Color.rgb(85, 15, 25)) { showApiSettings() }.apply {
+            textSize = 12f
+        }, matchWrap().apply { bottomMargin = dp(12) })
 
         body.addView(text("YOUR PERSONAL AI ASSISTANT", 10, muted, true).apply {
             letterSpacing = .18f; gravity = Gravity.CENTER; setPadding(0, 0, 0, dp(18))
@@ -105,6 +111,8 @@ class MainActivity : Activity() {
             feature("⚡", "Automation") { showInfo("Automation", "Actions will ask for your confirmation before running.") }
         ), matchWrap().apply { bottomMargin = dp(18) })
 
+        body.addView(text(if (GeminiApiClient.hasKey(this)) "GEMINI AI • API KEY SAVED" else "GEMINI AI • API KEY NOT SET", 12, red, true)
+            .apply { setPadding(dp(2), dp(4), 0, dp(8)) }, matchWrap())
         body.addView(text("JARVIS SYSTEM STATUS", 12, red, true).apply { setPadding(dp(2), dp(4), 0, dp(8)) }, matchWrap())
         status = text("STANDBY  •  Voice assistant is off", 13, white, false).apply {
             gravity = Gravity.CENTER; setPadding(dp(12), dp(15), dp(12), dp(15)); background = panel()
@@ -132,28 +140,78 @@ class MainActivity : Activity() {
         root.addView(row(actionButton("‹", red) { showHome() }, text("JARVIS AI  •  CHAT", 18, white, true)), matchWrap())
         val scroll = ScrollView(this)
         val messages = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(0, dp(18), 0, dp(12)) }
-        messages.addView(bubble("నమస్కారం! నేను JARVIS AI. మీకు ఎలా సహాయం చేయగలను?", false), matchWrap().apply { bottomMargin = dp(12) })
-        messages.addView(bubble("Hey Jarvis, what can you do?", true), matchWrap().apply { bottomMargin = dp(12) })
-        messages.addView(bubble("నేను voice commands, phone tools, web search మరియు coding సహాయం చేయగలను.", false), matchWrap())
+        messages.addView(bubble("నమస్కారం! నేను JARVIS AI. Gemini ద్వారా తెలుగులోనూ English లోనూ మాట్లాడవచ్చు.", false), matchWrap().apply { bottomMargin = dp(12) })
         scroll.addView(messages, ViewGroup.LayoutParams(-1, -1))
         root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
         val inputRow = row()
         val input = EditText(this).apply {
             hint = "Ask JARVIS anything..."
             setHintTextColor(muted); setTextColor(white); textSize = 14f
-            setPadding(dp(14), 0, dp(14), 0); background = panel()
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
+            maxLines = 3
+            setPadding(dp(14), dp(8), dp(14), dp(8)); background = panel()
         }
-        inputRow.addView(input, LinearLayout.LayoutParams(0, dp(52), 1f).apply { rightMargin = dp(8) })
+        inputRow.addView(input, LinearLayout.LayoutParams(0, dp(56), 1f).apply { rightMargin = dp(8) })
         inputRow.addView(actionButton("➤", red) {
             val q = input.text.toString().trim()
             if (q.isNotEmpty()) {
-                Toast.makeText(this, "Chat AI connection is the next coding step.", Toast.LENGTH_SHORT).show()
-                input.text.clear()
+                if (!GeminiApiClient.hasKey(this)) {
+                    showApiSettings()
+                } else {
+                    messages.addView(bubble(q, true), matchWrap().apply { bottomMargin = dp(10) })
+                    val loading = text("JARVIS is thinking  •••", 13, Color.rgb(255, 120, 130), true)
+                    messages.addView(loading, matchWrap().apply { bottomMargin = dp(12) })
+                    input.text.clear()
+                    scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
+                    Thread {
+                        val answer = GeminiApiClient.ask(this, q)
+                        runOnUiThread {
+                            messages.removeView(loading)
+                            messages.addView(bubble(answer, false), matchWrap().apply { bottomMargin = dp(12) })
+                            scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
+                        }
+                    }.start()
+                }
             }
-        }, LinearLayout.LayoutParams(dp(58), dp(52)))
+        }, LinearLayout.LayoutParams(dp(58), dp(56)))
         root.addView(inputRow, matchWrap().apply { topMargin = dp(10) })
+        root.addView(text("Powered by Gemini • Telugu + English", 10, muted, false).apply {
+            gravity = Gravity.CENTER; setPadding(0, dp(7), 0, 0)
+        }, matchWrap())
         setContentView(root)
         animateScreen(root)
+    }
+
+    private fun showApiSettings() {
+        val field = EditText(this).apply {
+            hint = "Paste Google Gemini API key"
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+            setSingleLine(true)
+        }
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(20), dp(8), dp(20), dp(4))
+            addView(field, matchWrap())
+            addView(text("Key is encrypted on this device with Android Keystore. Never share it in chat or commit it to GitHub.", 12, muted, false)
+                .apply { setPadding(0, dp(10), 0, 0) }, matchWrap())
+        }
+        AlertDialog.Builder(this)
+            .setTitle("Gemini API Settings")
+            .setView(container)
+            .setPositiveButton("SAVE KEY") { _, _ ->
+                try {
+                    GeminiApiClient.saveKey(this, field.text.toString())
+                    Toast.makeText(this, "Gemini API key saved securely on this device.", Toast.LENGTH_LONG).show()
+                } catch (e: Exception) {
+                    Toast.makeText(this, e.message ?: "Could not save API key", Toast.LENGTH_LONG).show()
+                }
+            }
+            .setNeutralButton("REMOVE KEY") { _, _ ->
+                GeminiApiClient.clearKey(this)
+                Toast.makeText(this, "Gemini key removed from this device.", Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("CANCEL", null)
+            .show()
     }
 
     private fun showVoice() {
