@@ -48,7 +48,7 @@ class WakeWordService : Service() {
         super.onCreate()
         tts = TextToSpeech(this) { status ->
             if (status == TextToSpeech.SUCCESS) {
-                tts?.language = Locale.forLanguageTag("te-IN")
+                VoicePreferences.apply(tts, this)
                 tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
                     override fun onStart(utteranceId: String?) { speaking = true }
                     override fun onDone(utteranceId: String?) {
@@ -150,10 +150,18 @@ class WakeWordService : Service() {
         val result = LocalCommandRouter(this, tts).run(command)
         if (result.startsWith("__LOCAL_LLM__:")) {
             val prompt = result.substringAfter(":")
-            speak("Thinking locally")
+            speak("One moment")
             Thread {
-                val answer = LocalModelClient.ask(prompt)
-                    ?: "Offline AI model is not configured. Built-in offline commands are available; Gemini needs internet."
+                val answer = if (GeminiApiClient.hasKey(this)) {
+                    val history = getSharedPreferences("jarvis_memory", MODE_PRIVATE).getString("history", "").orEmpty()
+                    val contextualPrompt = if (history.isBlank()) prompt else "Recent conversation memory:\\n$history\\nUser: $prompt"
+                    GeminiApiClient.ask(this, contextualPrompt).also { reply ->
+                        getSharedPreferences("jarvis_memory", MODE_PRIVATE).edit()
+                            .putString("history", (history + "\\nUser: " + prompt.take(600) + "\\nJARVIS: " + reply.take(900)).takeLast(7000)).apply()
+                    }
+                } else {
+                    LocalModelClient.ask(prompt) ?: "Gemini API key is not configured. Add it in JARVIS settings to use cloud voice AI."
+                }
                 main.post { if (active) speak(answer) }
             }.start()
         } else speak(result)
@@ -165,8 +173,13 @@ class WakeWordService : Service() {
 
     private fun speak(text: String) {
         if (text.isBlank()) return
-        tts?.language = Locale.forLanguageTag(if (waitingForCommand) "te-IN" else "te-IN")
-        tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "jarvis-${System.currentTimeMillis()}")
+        VoicePreferences.apply(tts, this, text)
+        speaking = true
+        val result = tts?.speak(text.take(3200), TextToSpeech.QUEUE_FLUSH, null, "jarvis-${System.currentTimeMillis()}") ?: TextToSpeech.ERROR
+        if (result != TextToSpeech.SUCCESS) {
+            speaking = false
+            scheduleRestart(700)
+        }
     }
 
     private fun createChannel() {
