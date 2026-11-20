@@ -126,6 +126,7 @@ class MainActivity : Activity() {
         body.addView(row(feature("▣", "Files") { pickDocument() }, feature("</>", "Code") { showCodeAssistant() }, feature("◎", "Web") { openWebSearch() }, feature("⚡", "Tools") { showInfo("Tools", "Automation tools will ask before acting.") }), matchWrap().apply { bottomMargin = dp(16) })
         body.addView(text("QUICK ACTIONS", 12, red, true).apply { letterSpacing = .12f; setPadding(dp(2), dp(4), 0, dp(8)) }, matchWrap())
         body.addView(actionButton("▤  CONTROL CENTER  •  API / MEMORY / LIMITS", Color.rgb(75, 12, 22)) { showControlCenter() }, matchWrap().apply { bottomMargin = dp(12) })
+        body.addView(actionButton("▤  CONTROL CENTER  •  API / MEMORY / LIMITS", Color.rgb(75, 12, 22)) { showControlCenter() }, matchWrap().apply { bottomMargin = dp(12) })
         body.addView(text("JARVIS SYSTEM STATUS", 12, red, true).apply { setPadding(dp(2), dp(4), 0, dp(8)) }, matchWrap())
         status = text("STANDBY  •  Voice assistant is off", 13, white, false).apply {
             gravity = Gravity.CENTER; setPadding(dp(12), dp(15), dp(12), dp(15)); background = panel()
@@ -150,7 +151,7 @@ class MainActivity : Activity() {
 
     private fun showChat() {
         root = baseScreen()
-        root.addView(row(actionButton("‹", red) { showHome() }, text("JARVIS AI", 19, white, true), actionButton("⚙", Color.rgb(70, 15, 24)) { showApiSettings() }), matchWrap())
+        root.addView(row(actionButton("‹", red) { showHome() }, text("JARVIS AI", 19, white, true), actionButton("🎙", Color.rgb(70, 15, 24)) { startVoiceInput() }), matchWrap())
         val scroll = ScrollView(this)
         val messages = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(0, dp(18), 0, dp(12)) }
         messages.addView(bubble("నమస్కారం! నేను JARVIS AI. Gemini ద్వారా తెలుగులోనూ English లోనూ మాట్లాడవచ్చు.", false), matchWrap().apply { bottomMargin = dp(12) })
