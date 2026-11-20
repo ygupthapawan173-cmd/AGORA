@@ -17,7 +17,7 @@ class LocalCommandRouter(private val context: Context, private val tts: TextToSp
                 lower.contains("time") || lower.contains("సమయం") || lower.contains("టైమ్") ->
                     "The time is ${java.text.SimpleDateFormat("h:mm a", Locale.getDefault()).format(java.util.Date())}"
                 lower.startsWith("search ") || lower.startsWith("వెతుకు ") || lower.startsWith("search for ") -> {
-                    val query = q.substringAfter(' ').trim()
+                    val query = when { lower.startsWith("search for ") -> q.substringAfter("search for ", "").trim(); lower.startsWith("వెతుకు ") -> q.substringAfter("వెతుకు ", "").trim(); else -> q.substringAfter(' ').trim() }
                     val i = Intent(Intent.ACTION_WEB_SEARCH).putExtra("query", query).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     context.startActivity(i); "Opening web search for $query"
                 }
@@ -45,7 +45,7 @@ class LocalCommandRouter(private val context: Context, private val tts: TextToSp
                 lower.contains("camera") || lower.contains("కెమెరా") -> {
                     context.startActivity(Intent("android.media.action.IMAGE_CAPTURE").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); "Opening camera"
                 }
-                lower == "hello" || lower.contains("హలో") || lower.contains("నమస్తే") -> "Hello! I am Agora. How can I help?"
+                lower == "hello" || lower.contains("హలో") || lower.contains("నమస్తే") -> "Hello! I am JARVIS AI. How can I help?"
                 else -> "__LOCAL_LLM__:$q"
             }
         } catch (e: Exception) { "I could not complete that action: ${e.message ?: "unknown error"}" }
