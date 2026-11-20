@@ -15,6 +15,7 @@ import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.speech.tts.TextToSpeech
+import android.speech.tts.UtteranceProgressListener
 import java.util.Locale
 
 /**
@@ -35,6 +36,7 @@ class WakeWordService : Service() {
     private val main = Handler(Looper.getMainLooper())
     private var recognizer: SpeechRecognizer? = null
     private var tts: TextToSpeech? = null
+    @Volatile private var speaking = false
     private var waitingForCommand = false
     private var active = false
     private var useOnDevice = false
@@ -44,7 +46,23 @@ class WakeWordService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        tts = TextToSpeech(this) { status -> if (status == TextToSpeech.SUCCESS) tts?.language = Locale.forLanguageTag("te-IN") }
+        tts = TextToSpeech(this) { status ->
+            if (status == TextToSpeech.SUCCESS) {
+                tts?.language = Locale.forLanguageTag("te-IN")
+                tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+                    override fun onStart(utteranceId: String?) { speaking = true }
+                    override fun onDone(utteranceId: String?) {
+                        speaking = false
+                        main.post { scheduleRestart(350) }
+                    }
+                    @Deprecated("Deprecated in Java")
+                    override fun onError(utteranceId: String?) {
+                        speaking = false
+                        main.post { scheduleRestart(500) }
+                    }
+                })
+            }
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -90,7 +108,7 @@ class WakeWordService : Service() {
             override fun onResults(results: Bundle?) {
                 val spoken = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull().orEmpty()
                 handleSpeech(spoken)
-                scheduleRestart(450)
+                if (!speaking) scheduleRestart(450)
             }
             override fun onPartialResults(partialResults: Bundle?) {
                 // Wake phrase is acted on final results only to reduce false triggers.
@@ -142,7 +160,7 @@ class WakeWordService : Service() {
     }
 
     private fun scheduleRestart(delayMs: Long) {
-        if (active) main.postDelayed({ if (active) startRecognition() }, delayMs)
+        if (active && !speaking) main.postDelayed({ if (active && !speaking) startRecognition() }, delayMs)
     }
 
     private fun speak(text: String) {
