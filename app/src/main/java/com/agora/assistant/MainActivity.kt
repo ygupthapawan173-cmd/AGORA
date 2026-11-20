@@ -73,7 +73,20 @@ class MainActivity : Activity() {
             setPadding(dp(18), dp(20), dp(18), dp(20))
             background = gradientPanel(red)
         }
-        welcome.addView(text("🤖", 58, white, false).apply { gravity = Gravity.CENTER }, matchWrap())
+        val core = TextView(this).apply {
+            text = "◈"; textSize = 64f; typeface = Typeface.DEFAULT_BOLD
+            setTextColor(white); gravity = Gravity.CENTER
+            background = GradientDrawable(GradientDrawable.Orientation.TL_BR,
+                intArrayOf(red, Color.rgb(75, 8, 20), black)).apply {
+                shape = GradientDrawable.OVAL
+                setStroke(dp(3), Color.rgb(255, 120, 130))
+            }
+        }
+        welcome.addView(core, LinearLayout.LayoutParams(dp(124), dp(124)).apply { gravity = Gravity.CENTER })
+        pulseOrb(core)
+        welcome.addView(text("JARVIS CORE  •  ONLINE", 11, Color.rgb(255, 120, 130), true).apply {
+            gravity = Gravity.CENTER; setPadding(0, dp(10), 0, dp(2))
+        }, matchWrap())
         welcome.addView(text("నమస్కారం! 👋", 23, white, true).apply { gravity = Gravity.CENTER; setPadding(0, dp(8), 0, dp(4)) }, matchWrap())
         welcome.addView(text("How can I help you today?", 14, muted, false).apply { gravity = Gravity.CENTER }, matchWrap())
         body.addView(welcome, matchWrap().apply { bottomMargin = dp(16) })
@@ -92,7 +105,7 @@ class MainActivity : Activity() {
             feature("⚡", "Automation") { showInfo("Automation", "Actions will ask for your confirmation before running.") }
         ), matchWrap().apply { bottomMargin = dp(18) })
 
-        body.addView(text("HEY AGORA STATUS", 12, red, true).apply { setPadding(dp(2), dp(4), 0, dp(8)) }, matchWrap())
+        body.addView(text("JARVIS SYSTEM STATUS", 12, red, true).apply { setPadding(dp(2), dp(4), 0, dp(8)) }, matchWrap())
         status = text("STANDBY  •  Voice assistant is off", 13, white, false).apply {
             gravity = Gravity.CENTER; setPadding(dp(12), dp(15), dp(12), dp(15)); background = panel()
         }
@@ -140,6 +153,7 @@ class MainActivity : Activity() {
         }, LinearLayout.LayoutParams(dp(58), dp(52)))
         root.addView(inputRow, matchWrap().apply { topMargin = dp(10) })
         setContentView(root)
+        animateScreen(root)
     }
 
     private fun showVoice() {
@@ -162,11 +176,12 @@ class MainActivity : Activity() {
         root.addView(actionButton("🎙  START HEY AGORA", red) { ensurePermissionsAndStart() }, matchWrap())
         root.addView(actionButton("■  STOP", Color.DKGRAY) {
             stopService(Intent(this, WakeWordService::class.java))
-            startButton.isEnabled = true
+            if (::startButton.isInitialized) startButton.isEnabled = true
             Toast.makeText(this, "Voice listening stopped", Toast.LENGTH_SHORT).show()
         }, matchWrap().apply { topMargin = dp(10) })
         root.addView(View(this), LinearLayout.LayoutParams(-1, 0, 1f))
         setContentView(root)
+        animateScreen(root)
     }
 
     private fun showInfo(title: String, detail: String) {
@@ -175,6 +190,7 @@ class MainActivity : Activity() {
         root.addView(text(title, 24, white, true).apply { gravity = Gravity.CENTER; setPadding(0, dp(40), 0, dp(18)) }, matchWrap())
         root.addView(infoCard(title, detail, red), matchWrap())
         setContentView(root)
+        animateScreen(root)
     }
 
 
@@ -277,11 +293,11 @@ class MainActivity : Activity() {
         try {
             val i = Intent(this, WakeWordService::class.java).setAction(WakeWordService.ACTION_START)
             if (Build.VERSION.SDK_INT >= 26) startForegroundService(i) else startService(i)
-            status.text = "LISTENING STARTED  •  Wake phrase: Hey Agora"
-            startButton.isEnabled = false
+            if (::status.isInitialized) status.text = "LISTENING STARTED  •  Wake phrase: Hey Agora"
+            if (::startButton.isInitialized) startButton.isEnabled = false
         } catch (e: Exception) {
-            status.text = "Could not start voice service: ${e.message}"
-            startButton.isEnabled = true
+            if (::status.isInitialized) status.text = "Could not start voice service: ${e.message}"
+            if (::startButton.isInitialized) startButton.isEnabled = true
         }
     }
 
