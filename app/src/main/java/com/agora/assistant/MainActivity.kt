@@ -135,7 +135,7 @@ class MainActivity : Activity() {
         messages.addView(bubble("నమస్కారం! నేను JARVIS AI. మీకు ఎలా సహాయం చేయగలను?", false), matchWrap().apply { bottomMargin = dp(12) })
         messages.addView(bubble("Hey Jarvis, what can you do?", true), matchWrap().apply { bottomMargin = dp(12) })
         messages.addView(bubble("నేను voice commands, phone tools, web search మరియు coding సహాయం చేయగలను.", false), matchWrap())
-        scroll.addView(messages, ScrollView.LayoutParams(-1, -1))
+        scroll.addView(messages, ViewGroup.LayoutParams(-1, -1))
         root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
         val inputRow = row()
         val input = EditText(this).apply {
