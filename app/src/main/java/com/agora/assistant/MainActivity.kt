@@ -26,7 +26,9 @@ import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import android.speech.RecognizerIntent
+import android.speech.tts.TextToSpeech
 import android.net.Uri
+import java.util.Locale
 
 class MainActivity : Activity() {
     private lateinit var root: LinearLayout
@@ -37,6 +39,8 @@ class MainActivity : Activity() {
     private val fileRequest = 403
     private val visionRequest = 404
     private var pendingChatText = ""
+    private var replyTts: TextToSpeech? = null
+    private var replyTtsReady = false
     private val red = Color.rgb(255, 35, 48)
     private val white = Color.WHITE
     private val muted = Color.rgb(178, 178, 188)
@@ -47,6 +51,10 @@ class MainActivity : Activity() {
         window.statusBarColor = black
         window.navigationBarColor = black
         window.decorView.systemUiVisibility = 0
+        replyTts = TextToSpeech(this) { result ->
+            replyTtsReady = result == TextToSpeech.SUCCESS
+            if (replyTtsReady) replyTts?.language = Locale.forLanguageTag("en-IN")
+        }
         showHome()
     }
 
@@ -184,6 +192,7 @@ class MainActivity : Activity() {
                         runOnUiThread {
                             messages.removeView(loading)
                             messages.addView(bubble(answer, false), matchWrap().apply { bottomMargin = dp(12) })
+                            speakAssistantReply(answer)
                             scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
                         }
                     }.start()
@@ -197,6 +206,22 @@ class MainActivity : Activity() {
         }, matchWrap())
         setContentView(root)
         animateScreen(root)
+    }
+
+    private fun speakAssistantReply(message: String) {
+        if (message.isBlank() || !replyTtsReady) return
+        val telugu = message.any { it in '\u0C00'..'\u0C7F' }
+        val locale = Locale.forLanguageTag(if (telugu) "te-IN" else "en-IN")
+        val availability = replyTts?.isLanguageAvailable(locale) ?: TextToSpeech.LANG_NOT_SUPPORTED
+        replyTts?.language = if (availability >= TextToSpeech.LANG_AVAILABLE) locale else Locale.forLanguageTag("en-IN")
+        replyTts?.speak(message.take(3500), TextToSpeech.QUEUE_FLUSH, null, "jarvis-chat-${System.currentTimeMillis()}")
+    }
+
+    override fun onDestroy() {
+        replyTts?.stop()
+        replyTts?.shutdown()
+        replyTts = null
+        super.onDestroy()
     }
 
     private fun memoryPrompt(q: String): String {
