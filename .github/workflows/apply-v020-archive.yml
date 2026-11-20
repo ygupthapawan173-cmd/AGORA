@@ -27,8 +27,7 @@ jobs:
           tar -xJf "$tmp/source.tar.xz" -C "$tmp"
           source_dir="$tmp/AGORA-jarvis-red-white-ui"
           test -f "$source_dir/app/src/main/AndroidManifest.xml"
-          rsync -a --delete --exclude='.git/' "$source_dir/" ./
-          rm -f jarvis-v0.2.0-source.tar.xz.b64
+          rsync -a --delete --exclude='.git/' --exclude='jarvis-v0.2.0-source.tar.xz.b64' "$source_dir/" ./
           rm -rf "$tmp"
 
       - name: Setup JDK 17
