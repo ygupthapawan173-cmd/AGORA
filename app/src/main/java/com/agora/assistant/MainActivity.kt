@@ -240,10 +240,14 @@ class MainActivity : Activity() {
     }
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (resultCode != RESULT_OK || data?.data == null) return
-        val uri = data.data!!
+        if (resultCode != RESULT_OK || data == null) return
+        if (requestCode == speechRequest) {
+            val words = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull().orEmpty()
+            if (words.isNotBlank()) { pendingChatText = words; showChat() }
+            return
+        }
+        val uri = data.data ?: return
         when (requestCode) {
-            speechRequest -> { val words = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull().orEmpty(); if (words.isNotBlank()) { pendingChatText = words; showChat() } }
             fileRequest -> try { val content = contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }.orEmpty().take(9000); pendingChatText = "Summarize this file:\\n$content"; showChat() } catch (ex: Exception) { Toast.makeText(this, "File read failed", Toast.LENGTH_LONG).show() }
             visionRequest -> Thread { val answer = try { val bytes = contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: byteArrayOf(); GeminiApiClient.askImage(this, "Describe this image and read visible text. Reply in Telugu if suitable.", bytes, contentResolver.getType(uri) ?: "image/jpeg") } catch (_: Exception) { "Image analysis failed" }; runOnUiThread { AlertDialog.Builder(this).setTitle("JARVIS Vision").setMessage(answer).setPositiveButton("ASK MORE") { _, _ -> pendingChatText = answer; showChat() }.setNegativeButton("CLOSE", null).show() } }.start()
         }
