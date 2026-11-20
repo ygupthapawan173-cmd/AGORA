@@ -135,7 +135,7 @@ class WakeWordService : Service() {
             speak("Thinking locally")
             Thread {
                 val answer = LocalModelClient.ask(prompt)
-                    ?: "Local AI model is not running. Start the optional llama server in Termux, or use a built-in command."
+                    ?: "Offline AI model is not configured. Built-in offline commands are available; Gemini needs internet."
                 main.post { if (active) speak(answer) }
             }.start()
         } else speak(result)
@@ -154,7 +154,7 @@ class WakeWordService : Service() {
     private fun createChannel() {
         if (Build.VERSION.SDK_INT >= 26) {
             val manager = getSystemService(NotificationManager::class.java)
-            manager.createNotificationChannel(NotificationChannel(CHANNEL, "AGORA Wake Word", NotificationManager.IMPORTANCE_LOW))
+            manager.createNotificationChannel(NotificationChannel(CHANNEL, "JARVIS Voice Assistant", NotificationManager.IMPORTANCE_LOW))
         }
     }
 
