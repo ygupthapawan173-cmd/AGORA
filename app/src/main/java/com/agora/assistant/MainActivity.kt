@@ -25,12 +25,18 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
+import android.speech.RecognizerIntent
+import android.net.Uri
 
 class MainActivity : Activity() {
     private lateinit var root: LinearLayout
     private lateinit var status: TextView
     private lateinit var startButton: Button
     private val requestCode = 401
+    private val speechRequest = 402
+    private val fileRequest = 403
+    private val visionRequest = 404
+    private var pendingChatText = ""
     private val red = Color.rgb(255, 35, 48)
     private val white = Color.WHITE
     private val muted = Color.rgb(178, 178, 188)
@@ -153,6 +159,8 @@ class MainActivity : Activity() {
         val inputRow = row()
         val input = EditText(this).apply {
             hint = "Ask JARVIS anything..."
+            setText(pendingChatText)
+            pendingChatText = ""
             setHintTextColor(muted); setTextColor(white); textSize = 14f
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
             maxLines = 3
@@ -171,7 +179,8 @@ class MainActivity : Activity() {
                     input.text.clear()
                     scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
                     Thread {
-                        val answer = GeminiApiClient.ask(this, q)
+                        val answer = GeminiApiClient.ask(this, memoryPrompt(q))
+                        saveMemory(q, answer)
                         runOnUiThread {
                             messages.removeView(loading)
                             messages.addView(bubble(answer, false), matchWrap().apply { bottomMargin = dp(12) })
@@ -190,6 +199,55 @@ class MainActivity : Activity() {
         animateScreen(root)
     }
 
+    private fun memoryPrompt(q: String): String {
+        val h = getSharedPreferences("jarvis_memory", MODE_PRIVATE).getString("history", "").orEmpty()
+        return if (h.isBlank()) q else "Recent memory:\\n$h\\nUser: $q"
+    }
+    private fun saveMemory(q: String, a: String) {
+        val p = getSharedPreferences("jarvis_memory", MODE_PRIVATE)
+        p.edit().putString("history", (p.getString("history", "").orEmpty() + "\\nUser: " + q.take(800) + "\\nJARVIS: " + a.take(1200)).takeLast(7000)).apply()
+    }
+    private fun showControlCenter() {
+        val (used, limit) = GeminiApiClient.usage(this)
+        val mem = getSharedPreferences("jarvis_memory", MODE_PRIVATE).getString("history", "").orEmpty()
+        val msg = "Google Gemini\\nRequests today: $used / $limit\\nMemory stored: ${mem.length} characters"
+        AlertDialog.Builder(this).setTitle("JARVIS Control Center").setMessage(msg).setPositiveButton("API SETTINGS") { _, _ -> showApiSettings() }.setNeutralButton("CLEAR MEMORY") { _, _ -> getSharedPreferences("jarvis_memory", MODE_PRIVATE).edit().clear().apply() }.setNegativeButton("CLOSE", null).show()
+    }
+    private fun showTools() {
+        val items = arrayOf("Web Search", "Code Assistant", "Offline Commands", "Phone Automation", "Vision & OCR", "Open Text File", "Control Center")
+        AlertDialog.Builder(this).setTitle("JARVIS Tools").setItems(items) { _, i -> when (i) { 0 -> askSearch(); 1 -> codeAssistant(); 2 -> offlineCommand(); 3 -> phoneAction(); 4 -> pickVisionImage(); 5 -> pickDocument(); 6 -> showControlCenter() } }.show()
+    }
+    private fun askSearch() {
+        val e = EditText(this).apply { hint = "Search web"; setTextColor(white) }
+        AlertDialog.Builder(this).setTitle("Web Search").setView(e).setPositiveButton("SEARCH") { _, _ -> val q = e.text.toString().trim(); if (q.isNotBlank()) try { startActivity(Intent(Intent.ACTION_WEB_SEARCH).putExtra(android.app.SearchManager.QUERY, q)) } catch (_: Exception) { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/search?q=" + Uri.encode(q)))) } }.setNegativeButton("CANCEL", null).show()
+    }
+    private fun codeAssistant() {
+        val e = EditText(this).apply { hint = "Describe coding task or paste error"; setTextColor(white); minLines = 3 }
+        AlertDialog.Builder(this).setTitle("Code Assistant").setView(e).setPositiveButton("ASK GEMINI") { _, _ -> val q = e.text.toString().trim(); if (q.isNotBlank()) { pendingChatText = "Act as a senior coding assistant. Help with: $q"; showChat() } }.setNegativeButton("CANCEL", null).show()
+    }
+    private fun offlineCommand() {
+        val e = EditText(this).apply { hint = "time / open YouTube / open settings"; setTextColor(white) }
+        AlertDialog.Builder(this).setTitle("Offline Commands").setMessage("Built-in commands run locally without Gemini.").setView(e).setPositiveButton("RUN") { _, _ -> val q = e.text.toString().trim(); if (q.isNotBlank()) Toast.makeText(this, LocalCommandRouter(this, null).run(q).removePrefix("__LOCAL_LLM__:"), Toast.LENGTH_LONG).show() }.setNegativeButton("CANCEL", null).show()
+    }
+    private fun phoneAction() {
+        val e = EditText(this).apply { hint = "open YouTube / call 1234567890 / message Hello"; setTextColor(white) }
+        AlertDialog.Builder(this).setTitle("Phone Automation").setMessage("Calls and messages open for your review; JARVIS will not send silently.").setView(e).setPositiveButton("CONTINUE") { _, _ -> val cmd = e.text.toString().trim(); if (cmd.isNotBlank()) AlertDialog.Builder(this).setMessage("Confirm: $cmd").setPositiveButton("ALLOW") { _, _ -> Toast.makeText(this, LocalCommandRouter(this, null).run(cmd), Toast.LENGTH_LONG).show() }.setNegativeButton("CANCEL", null).show() }.setNegativeButton("CANCEL", null).show()
+    }
+    private fun pickDocument() { startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("text/*"), fileRequest) }
+    private fun pickVisionImage() { startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("image/*"), visionRequest) }
+    private fun startVoiceInput() {
+        try { startActivityForResult(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM).putExtra(RecognizerIntent.EXTRA_LANGUAGE, "te-IN"), speechRequest) } catch (_: Exception) { Toast.makeText(this, "Speech recognition unavailable", Toast.LENGTH_LONG).show() }
+    }
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (resultCode != RESULT_OK || data?.data == null) return
+        val uri = data.data!!
+        when (requestCode) {
+            speechRequest -> { val words = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull().orEmpty(); if (words.isNotBlank()) { pendingChatText = words; showChat() } }
+            fileRequest -> try { val content = contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }.orEmpty().take(9000); pendingChatText = "Summarize this file:\\n$content"; showChat() } catch (ex: Exception) { Toast.makeText(this, "File read failed", Toast.LENGTH_LONG).show() }
+            visionRequest -> Thread { val answer = try { val bytes = contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: byteArrayOf(); GeminiApiClient.askImage(this, "Describe this image and read visible text. Reply in Telugu if suitable.", bytes, contentResolver.getType(uri) ?: "image/jpeg") } catch (_: Exception) { "Image analysis failed" }; runOnUiThread { AlertDialog.Builder(this).setTitle("JARVIS Vision").setMessage(answer).setPositiveButton("ASK MORE") { _, _ -> pendingChatText = answer; showChat() }.setNegativeButton("CLOSE", null).show() } }.start()
+        }
+    }
     private fun showApiSettings() {
         val field = EditText(this).apply {
             hint = "Paste Google Gemini API key"
